@@ -1,5 +1,7 @@
 package com.animal.user.security;
 
+import com.animal.user.api.repository.RefreshRepository;
+import com.animal.user.security.jwt.CustomLogoutFilter;
 import com.animal.user.security.jwt.JWTFilter;
 import com.animal.user.security.jwt.JWTUtil;
 import com.animal.user.security.jwt.LoginFilter;
@@ -13,6 +15,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -23,12 +26,14 @@ public class SecurityConfig {
 
     private final JWTUtil jwtUtil;
 
+    private final RefreshRepository refreshRepository;
 
 
-    public SecurityConfig(AuthenticationConfiguration authenticationConfiguration, JWTUtil jwtUtil) {
 
+    public SecurityConfig(AuthenticationConfiguration authenticationConfiguration, JWTUtil jwtUtil, RefreshRepository refreshRepository) {
         this.authenticationConfiguration = authenticationConfiguration;
         this.jwtUtil=jwtUtil;
+        this.refreshRepository=refreshRepository;
     }
 
     @Bean
@@ -59,13 +64,17 @@ public class SecurityConfig {
                 .authorizeHttpRequests((auth) -> auth
                         .requestMatchers("/login", "/sign-up", "user/{id}").permitAll()
                         .requestMatchers("/admin").hasRole("DEFAULT")
+                        .requestMatchers("/reissue").permitAll()
                         .anyRequest().authenticated());
 
         http
                 .addFilterBefore(new JWTFilter(jwtUtil),LoginFilter.class);
 
         http
-                .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil), UsernamePasswordAuthenticationFilter.class);
+                .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil, refreshRepository), UsernamePasswordAuthenticationFilter.class);
+
+        http
+                .addFilterBefore(new CustomLogoutFilter(jwtUtil, refreshRepository), LogoutFilter.class);
 
         http
                 .sessionManagement((session) -> session
