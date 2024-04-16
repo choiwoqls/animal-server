@@ -5,7 +5,7 @@ import com.animal.user.api.repository.UserRepository;
 import com.animal.user.api.model.User;
 import com.animal.user.api.response.Response;
 import lombok.RequiredArgsConstructor;
-//import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -18,24 +18,29 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    //private final BCryptPasswordEncoder bCryptPasswordEncoder;
+    private final BCryptPasswordEncoder bCryptPasswordEncoder;
+
+//    public UserService(UserRepository userRepository, BCryptPasswordEncoder bCryptPasswordEncoder){
+//        this.userRepository=userRepository;
+//        this.bCryptPasswordEncoder=bCryptPasswordEncoder;
+//    }
 
 
     //로그인 (DB 비교 만)
-    public Response<?> login(String email, String password){
+    public Response<?> login(String username, String password){
 
         String msg = "";
         String suc = "";
         Optional<User> user = Optional.of(new User());
 
-        if(userRepository.findByEmail(email).isEmpty()){
+        if(userRepository.findByUsername(username) == null){
             msg = "등록되지 않은 아이디 입니다";
             suc = "failed";
             user = Optional.empty();
             return new Response<>(suc,msg,user);
         }
 
-        if(userRepository.findByEmailAndPassword(email, password).isEmpty()){
+        if(userRepository.findByUsernameAndPassword(username, password).isEmpty()){
             msg = "비밀번호를 확인하세요";
             suc = "failed";
             user = Optional.empty();
@@ -43,7 +48,7 @@ public class UserService {
         }
 
 
-        user = userRepository.findByEmailAndPassword(email, password);
+        user = userRepository.findByUsernameAndPassword(username, password);
         msg = "로그인 성공";
         suc = "success";
 
@@ -78,6 +83,8 @@ public class UserService {
 
     public Response<?> save (UserDTO dto){
 
+        dto.setRole("ROLE_DEFAULT");
+
         if(this.checkEmpty(dto).getSuccess().equals("failed")){
             return checkEmpty(dto);
         }
@@ -90,7 +97,7 @@ public class UserService {
             return checkDuplication(dto);
         }
 
-        //dto.setUserPassword(bCryptPasswordEncoder.encode(dto.getUserPassword()));
+        dto.setPassword(bCryptPasswordEncoder.encode(dto.getPassword()));
 
 
 
@@ -102,9 +109,10 @@ public class UserService {
         User user = new User();
 
         user.setName(dto.getName());
-        user.setEmail(dto.getEmail());
+        user.setUsername(dto.getUsername());
         user.setPassword(dto.getPassword());
         user.setPhone(dto.getPhone());
+        user.setRole(dto.getRole());
 
         return user;
     }
@@ -119,7 +127,7 @@ public class UserService {
         if(dto.getName().isEmpty()){
             suc = "failed";
             msg = "이름을 입력하시오";
-        }else if(dto.getEmail().isEmpty()){
+        }else if(dto.getUsername().isEmpty()){
             suc = "failed";
             msg = "아이디을 입력하시오";
         }else if(dto.getPassword().isEmpty()){
@@ -139,7 +147,7 @@ public class UserService {
         String suc = "";
         String msg = "";
 
-        if(userRepository.findByEmail(dto.getEmail()).isPresent()){
+        if(userRepository.findByUsername(dto.getUsername()) != null){
             msg = "중복된 아이디";
             suc = "failed";
         }else if(userRepository.findByPhone(dto.getPhone()).isPresent()){

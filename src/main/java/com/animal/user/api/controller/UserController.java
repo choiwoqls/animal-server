@@ -8,6 +8,7 @@ import com.animal.user.api.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.Mapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -39,21 +40,16 @@ public class UserController {
 
 
 
-    @GetMapping(value = "/sign-in")
-    public Response<?> signIn(@RequestParam("email") String email, @RequestParam("password")String password){
+//    @PostMapping(value = "/sign-in")
+//    public Response<?> signIn(@RequestBody UserDTO dto){
+//        System.out.println("로그인 로그인 asdasdasd");
+//        return userService.login(dto.getEmail(),dto.getPassword());
+//
+//    }
 
-        return userService.login(email,password);
-
-    }
 
 
 
-    @PostMapping(value = "/sign-up")
-    public Response<?> signUp(@RequestBody UserDTO dto){
-
-        return userService.save(dto);
-
-    }
 
 
 
